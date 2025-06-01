@@ -232,7 +232,7 @@ async function processPayment() {
 
         if (result.success) {
             // Redirect to TrustPay
-            const trustPayUrl = buildTrustPayUrl(result.orderId, email, currentOrderAmount);
+            const trustPayUrl = await buildTrustPayUrl(result.orderId, email, currentOrderAmount);
             window.location.href = trustPayUrl;
         } else {
             throw new Error(result.error || 'Chyba pri vytváraní objednávky');
@@ -247,25 +247,64 @@ async function processPayment() {
     }
 }
 
-function buildTrustPayUrl(orderId, email, amount) {
-    const baseUrl = 'https://ib.trustpay.eu/mapi5/pay.aspx';
-    const merchantId = 'YOUR_TRUSTPAY_MERCHANT_ID'; // Needs to be replaced with real merchant ID
-    const successUrl = `${window.location.origin}/success?session=${orderId}`;
-    const errorUrl = `${window.location.origin}/error`;
+async function buildTrustPayUrl(orderId, email, amount) {
+    try {
+        // Get merchant config from backend
+        const configResponse = await fetch('/api/trustpay-config');
+        const config = await configResponse.json();
 
-    const params = new URLSearchParams({
-        MerchantId: merchantId,
-        OrderId: orderId,
-        Amount: Math.round(amount * 100), // TrustPay expects amount in cents
-        Currency: 'EUR',
-        ReturnUrl: successUrl,
-        ErrorUrl: errorUrl,
-        Email: email,
-        Description: `${currentOrderCredits} Premium QR kód${currentOrderCredits > 1 ? 'ov' : ''}`,
-        Language: 'sk'
-    });
+        if (!config.success) {
+            throw new Error('Nemožno získať TrustPay konfiguráciu');
+        }
 
-    return `${baseUrl}?${params.toString()}`;
+        const accountId = config.merchantId;
+        const currency = 'EUR';
+        const paymentType = '0'; // 0 = Purchase
+
+        // Get signature from backend
+        const signatureResponse = await fetch('/api/trustpay-signature', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                accountId: accountId,
+                amount: Math.round(amount * 100), // Convert EUR to cents for card payments
+                currency: currency,
+                reference: orderId,
+                paymentType: paymentType
+            })
+        });
+
+        const signatureData = await signatureResponse.json();
+        if (!signatureData.success) {
+            throw new Error('Nemožno získať TrustPay signature');
+        }
+
+        // Use the correct TrustPay card payment endpoint
+        const baseUrl = 'https://amapi.trustpay.eu/mapi5/Card/paypopup';
+        const successUrl = `${window.location.origin}/success?session=${orderId}`;
+        const errorUrl = `${window.location.origin}/error`;
+        const cancelUrl = `${window.location.origin}/cancel`;
+
+        const params = new URLSearchParams({
+            AccountId: accountId,
+            Amount: Math.round(amount * 100), // Amount in cents for card payments
+            Currency: currency,
+            Reference: orderId,
+            PaymentType: paymentType,
+            Email: email,
+            Sig: signatureData.signature,
+            SuccessUrl: successUrl,
+            ErrorUrl: errorUrl,
+            CancelUrl: cancelUrl
+        });
+
+        return `${baseUrl}?${params.toString()}`;
+    } catch (error) {
+        console.error('Chyba pri vytváraní TrustPay URL:', error);
+        throw error;
+    }
 }
 
 function validateEmail(email) {

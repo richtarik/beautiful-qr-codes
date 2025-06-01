@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="sk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⏹️ Platba zrušená - Beautiful QR Codes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .cancel-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            color: #2d3436;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(253, 203, 110, 0.3);
+        }
+
+        .cancel-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .cancel-info {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+
+        .btn-retry {
+            background: #2d3436;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-retry:hover {
+            background: #636e72;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #2d3436;
+            border: 2px solid #2d3436;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #2d3436;
+            color: white;
+        }
+
+        .free-option {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cancel-container">
+        <div class="cancel-icon">⏹️</div>
+        <h1>Platba bola zrušená</h1>
+        <p>Rozhodli ste sa nezakúpiť Premium prístup.</p>
+
+        <div class="cancel-info">
+            <h3>💡 Žiadny problém!</h3>
+            <p>Môžete pokračovať vo vytváraní <strong>bezplatných QR kódov</strong> (čierne) alebo sa kedykoľvek vrátiť
+                pre Premium funkcie.</p>
+        </div>
+
+        <div class="free-option">
+            <h4>🆓 Bezplatné možnosti:</h4>
+            <ul style="text-align: left; display: inline-block;">
+                <li>✅ Neobmedzené čierne QR kódy</li>
+                <li>✅ Všetky typy obsahu (URL, WiFi, Email, Telefón)</li>
+                <li>✅ PNG export</li>
+                <li>✅ Žiadna registrácia potrebná</li>
+            </ul>
+        </div>
+
+        <a href="/" class="btn-retry">🎨 Vytvárať QR kódy zadarmo</a>
+        <a href="/#premium" class="btn-secondary">💎 Pozrieť Premium možnosti</a>
+
+        <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+            <p><strong>Premium výhody:</strong> Vlastné farby, SVG export, vysoké rozlíšenie, dizajny</p>
+            <p>📧 Otázky? Napíšte nám na <strong>info@beautiful-qr.sk</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Auto redirect to home after 15 seconds
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 15000);
+
+        // Show countdown
+        let countdown = 15;
+        const countdownElement = document.createElement('p');
+        countdownElement.style.cssText = 'margin-top: 1rem; font-size: 0.9rem; opacity: 0.7;';
+        document.querySelector('.cancel-container').appendChild(countdownElement);
+
+        const updateCountdown = () => {
+            countdownElement.textContent = `Automatické presmerovanie za ${countdown} sekúnd...`;
+            countdown--;
+            if (countdown >= 0) {
+                setTimeout(updateCountdown, 1000);
+            }
+        };
+        updateCountdown();
+    </script>
+</body>
+
+</html>

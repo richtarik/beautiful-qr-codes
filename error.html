@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❌ Chyba platby - Beautiful QR Codes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .error-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.3);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+
+        .btn-retry {
+            background: white;
+            color: #ee5a52;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-retry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #ee5a52;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-container">
+        <div class="error-icon">❌</div>
+        <h1>Platba nebola úspešná</h1>
+        <p>Nastala chyba pri spracovaní vašej platby.</p>
+
+        <div class="error-info">
+            <h3>🔍 Možné príčiny:</h3>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Nedostatok prostriedkov na karte</li>
+                <li>Nesprávne údaje karty</li>
+                <li>Karta je zablokovaná pre online platby</li>
+                <li>Problém s internetovým pripojením</li>
+                <li>Platba bola zrušená bankou</li>
+            </ul>
+        </div>
+
+        <p>💡 <strong>Tip:</strong> Skontrolujte údaje karty a skúste to znovu.</p>
+
+        <a href="/" class="btn-retry">🔄 Skúsiť znovu</a>
+        <a href="/" class="btn-secondary">🏠 Späť na hlavnú stránku</a>
+
+        <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+            <p>📧 Pre pomoc nás kontaktujte na: <strong>info@beautiful-qr.sk</strong></p>
+            <p>Uveďte čas platby a použitú kartu (posledné 4 cifry).</p>
+        </div>
+    </div>
+
+    <script>
+        // Get error details from URL if available
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultCode = urlParams.get('ResultCode');
+        const reference = urlParams.get('Reference');
+
+        if (resultCode) {
+            console.log('TrustPay Error Code:', resultCode);
+            console.log('Reference:', reference);
+        }
+
+        // Auto redirect to home after 30 seconds
+        setTimeout(() => {
+            if (confirm('Chcete sa vrátiť na hlavnú stránku?')) {
+                window.location.href = '/';
+            }
+        }, 30000);
+    </script>
+</body>
+
+</html>

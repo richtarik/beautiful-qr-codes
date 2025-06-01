@@ -123,90 +123,18 @@ app.post('/api/create-order', async (req, res) => {
 });
 
 // TrustPay success callback
-app.get('/success', async (req, res) => {
-    try {
-        const { session: orderId, PaymentRequestId, Result } = req.query;
-
-        if (!orderId) {
-            return res.status(400).send('Missing order ID');
-        }
-
-        const db = await readDatabase();
-        const order = db.orders[orderId];
-
-        if (!order) {
-            return res.status(404).send('Order not found');
-        }
-
-        // Verify payment with TrustPay (simplified - in production should verify signature)
-        if (Result === '0' || Result === 0) { // TrustPay success code
-            // Mark order as paid
-            order.paid = true;
-            order.status = 'completed';
-            order.paymentId = PaymentRequestId;
-            order.completedAt = new Date().toISOString();
-
-            // Create session
-            const sessionData = {
-                sessionToken: order.sessionToken,
-                email: order.email,
-                credits: order.credits,
-                orderId: order.orderId,
-                createdAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-            };
-
-            db.sessions[order.sessionToken] = sessionData;
-            await writeDatabase(db);
-
-            // Send email with access link
-            await sendAccessEmail(order.email, order.sessionToken, order.credits);
-
-            // Redirect to app with session parameters
-            const redirectUrl = `/?session=${order.sessionToken}&credits=${order.credits}&email=${encodeURIComponent(order.email)}`;
-            res.redirect(redirectUrl);
-
-        } else {
-            // Payment failed
-            order.status = 'failed';
-            order.failureReason = req.query.ErrorMessage || 'Unknown error';
-            await writeDatabase(db);
-
-            res.redirect('/error?reason=payment_failed');
-        }
-
-    } catch (error) {
-        console.error('Error processing success callback:', error);
-        res.status(500).send('Internal server error');
-    }
+app.get('/success', (req, res) => {
+    res.sendFile(path.join(__dirname, 'success.html'));
 });
 
 // TrustPay error callback
 app.get('/error', (req, res) => {
-    const reason = req.query.reason || 'payment_failed';
-    const message = reason === 'payment_failed' ?
-        'Platba sa nepodarila. Skúste to znovu.' :
-        'Nastala chyba. Kontaktujte podporu.';
+    res.sendFile(path.join(__dirname, 'error.html'));
+});
 
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Chyba platby</title>
-            <meta charset="utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .error { color: #d32f2f; }
-                .btn { background: #6c5ce7; color: white; padding: 10px 20px; border: none; border-radius: 5px; text-decoration: none; }
-            </style>
-        </head>
-        <body>
-            <h1 class="error">❌ ${message}</h1>
-            <p>Ak problém pretrváva, kontaktujte našu podporu.</p>
-            <a href="/" class="btn">Späť na hlavnú stránku</a>
-        </body>
-        </html>
-    `);
+// TrustPay cancel callback
+app.get('/cancel', (req, res) => {
+    res.sendFile(path.join(__dirname, 'cancel.html'));
 });
 
 // Deduct credit
@@ -289,6 +217,50 @@ app.get('/api/session/:sessionId', async (req, res) => {
     }
 });
 
+// Get TrustPay configuration for frontend
+app.get('/api/trustpay-config', (req, res) => {
+    res.json({
+        success: true,
+        merchantId: TRUSTPAY_CONFIG.merchantId
+    });
+});
+
+// Generate TrustPay signature for payment
+app.post('/api/trustpay-signature', (req, res) => {
+    try {
+        const { accountId, amount, currency, reference, paymentType } = req.body;
+
+        if (!accountId || !amount || !currency || !reference || paymentType === undefined) {
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
+        }
+
+        // Create signature data string according to TrustPay documentation
+        const sigData = `${accountId}/${amount}/${currency}/${reference}/${paymentType}`;
+
+        // Generate HMAC-SHA256 signature
+        const signature = crypto
+            .createHmac('sha256', TRUSTPAY_CONFIG.secretKey)
+            .update(sigData)
+            .digest('hex')
+            .toUpperCase();
+
+        res.json({
+            success: true,
+            signature: signature,
+            sigData: sigData // For debugging
+        });
+
+    } catch (error) {
+        console.error('Error generating TrustPay signature:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Send access email
 async function sendAccessEmail(email, sessionToken, credits) {
     try {
@@ -367,11 +339,6 @@ async function sendAccessEmail(email, sessionToken, credits) {
         // Don't throw error - email is not critical for functionality
     }
 }
-
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // Initialize and start server
 async function startServer() {

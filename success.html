@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="sk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Platba úspešná - Beautiful QR Codes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .success-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #00d4aa, #00b894);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 212, 170, 0.3);
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.1);
+            }
+        }
+
+        .credits-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+
+        .btn-premium {
+            background: white;
+            color: #00b894;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-icon">🎉</div>
+        <h1>Platba úspešná!</h1>
+        <p>Ďakujeme za vašu objednávku Premium QR kódov.</p>
+
+        <div class="credits-info">
+            <h3>✨ Váš Premium prístup je aktívny!</h3>
+            <p id="credits-display">Načítava sa...</p>
+            <p><strong>Platnosť:</strong> 24 hodín od nákupu</p>
+        </div>
+
+        <p>📧 <strong>Potvrdenie a backup link</strong> vám bude odoslaný na email.</p>
+
+        <a href="/?activate=true" class="btn-premium">🚀 Začať vytvárať QR kódy</a>
+
+        <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+            <p>💡 <strong>Tip:</strong> Kredity sa odpočítajú len pri stiahnutí QR kódu.</p>
+            <p>Môžete neobmedzene experimentovať s dizajnom!</p>
+        </div>
+    </div>
+
+    <script>
+        // Get session info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+
+        if (sessionId) {
+            // Fetch session details and display credits
+            fetch(`/api/session/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('credits-display').innerHTML = `
+                            <strong>Zostáva vám: ${data.session.credits} Premium QR kód${data.session.credits > 1 ? 'ov' : ''}</strong>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching session:', error);
+                    document.getElementById('credits-display').textContent = 'Premium prístup aktivovaný';
+                });
+        } else {
+            document.getElementById('credits-display').textContent = 'Premium prístup aktivovaný';
+        }
+    </script>
+</body>
+
+</html>
