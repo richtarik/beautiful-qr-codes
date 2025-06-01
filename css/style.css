@@ -233,7 +233,7 @@ h3 {
 
 .premium-section p {
     margin-bottom: 1rem;
-    opacity: 0.9;
+    color: #666;
 }
 
 /* Preview Panel */
@@ -537,5 +537,584 @@ footer {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+/* Design Section */
+.design-section {
+    background: #f0f8ff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+    border: 2px solid #e3f2fd;
+}
+
+.design-section h3 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.design-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.design-grid .input-group {
+    margin-bottom: 1rem;
+}
+
+.design-grid input[type="color"] {
+    width: 100%;
+    height: 45px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+    transition: border-color 0.3s ease;
+}
+
+.design-grid input[type="color"]:hover {
+    border-color: #667eea;
+}
+
+.design-grid input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 6px;
+}
+
+.design-grid input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.design-grid input[type="range"] {
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+#size-display {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9rem;
+}
+
+/* Premium Templates Gallery */
+.premium-templates {
+    background: #fff8e1;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+    border: 2px solid #ffc107;
+}
+
+.premium-templates h3 {
+    color: #f57c00;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.template-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #e0e0e0;
+}
+
+.template-card:hover {
+    border-color: #f57c00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 124, 0, 0.2);
+}
+
+.template-card.selected {
+    border-color: #f57c00;
+    background: #fff8e1;
+}
+
+.template-preview {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.template-card h4 {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    color: #333;
+}
+
+.template-card p {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0;
+}
+
+/* PayPal Modal Styles */
+.paypal-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.paypal-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.paypal-modal .modal-content {
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.payment-info {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.payment-info h4 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.payment-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.payment-info li {
+    padding: 0.3rem 0;
+    color: #555;
+}
+
+.price-info {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    margin: 1rem 0;
+    color: #1976d2;
+}
+
+.alt-payment {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.bank-info {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.bank-info p {
+    margin: 0.5rem 0;
+    font-family: monospace;
+    color: #333;
+}
+
+/* Premium Unlocked State */
+.premium-unlocked .design-section {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
+    border-color: #4caf50;
+}
+
+.premium-unlocked .premium-templates {
+    display: block !important;
+}
+
+.preview-panel {}
+
+/* Premium Options Grid */
+.premium-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.premium-option {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.premium-option:hover {
+    border-color: #f093fb;
+    transform: translateY(-2px);
+}
+
+.premium-option.popular {
+    border-color: #f093fb;
+    position: relative;
+}
+
+.premium-option h4 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.premium-option .price {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #f093fb;
+    margin: 0.5rem 0 1rem 0;
+}
+
+.premium-option .old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 1rem;
+    margin-left: 5px;
+}
+
+.premium-option .btn-premium {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+/* Premium Editor Styles */
+.premium-editor {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin: 1.5rem 0;
+    border: 2px solid #4caf50;
+}
+
+.premium-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #4caf50;
+}
+
+.premium-header h3 {
+    margin: 0;
+    color: #2e7d32;
+}
+
+.remaining-credits {
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 2px solid #4caf50;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.premium-editor .design-section {
+    background: white;
+    border-color: #4caf50;
+}
+
+.premium-editor .premium-templates {
+    background: white;
+    border-color: #4caf50;
+}
+
+.premium-editor .btn-premium {
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.premium-editor .btn-premium:hover {
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+}
+
+/* Unlock Animation */
+.premium-unlock-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 10001;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.premium-unlock-animation h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+}
+
+.premium-unlock-animation p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Responsive Updates */
+@media (max-width: 768px) {
+    .premium-options {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .premium-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .remaining-credits {
+        align-self: stretch;
+        text-align: center;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-content.success {
+    text-align: center;
+    max-width: 400px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+}
+
+.close:hover {
+    color: #000;
+}
+
+/* Payment Modal Styles */
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+#order-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-total {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #dee2e6;
+    font-size: 18px;
+    text-align: right;
+}
+
+.payment-form {
+    margin-top: 25px;
+}
+
+.payment-methods h3 {
+    margin: 20px 0 15px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.payment-method-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.payment-method-card:hover {
+    border-color: #6c5ce7;
+    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.1);
+}
+
+.payment-method-card img {
+    height: 30px;
+}
+
+.security-badges {
+    display: flex;
+    gap: 10px;
+}
+
+.security-badges span {
+    background: #e8f5e8;
+    color: #2d6a2d;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.payment-security {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+}
+
+.payment-security small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+/* Success Modal Styles */
+.modal-content.success h2 {
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.success-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.success-actions button {
+    min-width: 140px;
+}
+
+/* Input Group Updates */
+.input-group small {
+    color: #666;
+    font-size: 13px;
+    margin-top: 5px;
+    display: block;
+}
+
+.input-group input[type="email"] {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+.input-group input[type="email"]:focus {
+    outline: none;
+    border-color: #6c5ce7;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+/* Button Updates */
+#pay-button {
+    width: 100%;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 15px;
+}
+
+/* Responsive Design for Modals */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 10% auto;
+        padding: 20px;
+        width: 95%;
+    }
+
+    .payment-method-card {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .security-badges {
+        justify-content: center;
+    }
+
+    .success-actions {
+        flex-direction: column;
+    }
+
+    .success-actions button {
+        width: 100%;
     }
 }

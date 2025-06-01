@@ -92,7 +92,79 @@
                         <div class="premium-section">
                             <h3>🎨 Chceš krásny dizajn?</h3>
                             <p>Prémiové QR kódy s vlastnými farbami, logami a štýlmi</p>
-                            <button class="btn-premium" onclick="showPremiumOptions()">Prejsť na Premium (1€)</button>
+                            <div class="premium-options">
+                                <div class="premium-option">
+                                    <h4>1 Premium QR kód</h4>
+                                    <p class="price">1€</p>
+                                    <button class="btn-premium" onclick="buyPremium(1)">Kúpiť 1 QR (1€)</button>
+                                </div>
+                                <div class="premium-option popular">
+                                    <div class="popular-badge">Najobľúbenejšie</div>
+                                    <h4>5 Premium QR kódov</h4>
+                                    <p class="price">4€ <span class="old-price">5€</span></p>
+                                    <button class="btn-premium" onclick="buyPremium(5)">Kúpiť 5 QR (4€)</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Premium QR Editor (Hidden by default) -->
+                        <div class="premium-editor" id="premium-editor" style="display: none;">
+                            <div class="premium-header">
+                                <h3>✨ Premium QR Editor</h3>
+                                <div class="remaining-credits">
+                                    <span>Zostávajúce: <strong id="credits-count">0</strong> QR kódov</span>
+                                </div>
+                            </div>
+
+                            <!-- QR Design Customization -->
+                            <div class="design-section">
+                                <h3>🎨 Dizajn QR kódu</h3>
+                                <div class="design-grid">
+                                    <div class="input-group">
+                                        <label for="qr-foreground">Farba QR kódu</label>
+                                        <input type="color" id="qr-foreground" value="#000000">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="qr-background">Farba pozadia</label>
+                                        <input type="color" id="qr-background" value="#FFFFFF">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="qr-size">Veľkosť (px)</label>
+                                        <input type="range" id="qr-size" min="200" max="500" value="300">
+                                        <span id="size-display">300px</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Premium Templates Gallery -->
+                            <div class="premium-templates">
+                                <h3>✨ Premium Šablóny</h3>
+                                <div class="templates-grid">
+                                    <div class="template-card" onclick="selectTemplate('business')">
+                                        <div class="template-preview">🏢</div>
+                                        <h4>Business</h4>
+                                        <p>Profesionálny dizajn</p>
+                                    </div>
+                                    <div class="template-card" onclick="selectTemplate('creative')">
+                                        <div class="template-preview">🎨</div>
+                                        <h4>Creative</h4>
+                                        <p>Farebný a moderný</p>
+                                    </div>
+                                    <div class="template-card" onclick="selectTemplate('minimal')">
+                                        <div class="template-preview">⭕</div>
+                                        <h4>Minimal</h4>
+                                        <p>Čistý a elegantný</p>
+                                    </div>
+                                    <div class="template-card" onclick="selectTemplate('gradient')">
+                                        <div class="template-preview">🌈</div>
+                                        <h4>Gradient</h4>
+                                        <p>Farebné prechody</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn-premium btn-large" onclick="generatePremiumQR()">Vytvoriť Premium QR
+                                kód</button>
                         </div>
                     </div>
 
@@ -190,20 +262,77 @@
         </section>
     </main>
 
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closePaymentModal()">&times;</span>
+            <h2>🛒 Dokončenie objednávky</h2>
+            <div id="order-summary">
+                <div class="order-item">
+                    <span id="order-description">1 Premium QR kód</span>
+                    <span id="order-price">1,00 €</span>
+                </div>
+                <div class="order-total">
+                    <strong>Celkom: <span id="total-price">1,00 €</span></strong>
+                </div>
+            </div>
+
+            <div class="payment-form">
+                <div class="input-group">
+                    <label for="customer-email">Email adresa *</label>
+                    <input type="email" id="customer-email" placeholder="tvoj@email.sk" required>
+                    <small>Pošleme ti link na vytvorenie QR kódov</small>
+                </div>
+
+                <div class="payment-methods">
+                    <h3>Spôsob platby</h3>
+                    <div class="payment-method-card">
+                        <img src="https://cdn.trustpay.eu/assets/img/trustpay-logo.svg" alt="TrustPay" height="30">
+                        <span>Bezpečná platba kartou</span>
+                        <div class="security-badges">
+                            <span>🔒 SSL</span>
+                            <span>💳 Visa/MC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-premium btn-large" id="pay-button" onclick="processPayment()">
+                    Zaplatiť <span id="pay-amount">1,00 €</span>
+                </button>
+
+                <div class="payment-security">
+                    <small>🔒 Vaše údaje sú chránené 256-bit SSL šifrovaním</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal" style="display: none;">
+        <div class="modal-content success">
+            <h2>🎉 Platba úspešná!</h2>
+            <p>Ďakujeme za nákup! Na email <strong id="success-email"></strong> sme vám poslali link na vytvorenie QR
+                kódov.</p>
+            <div class="success-actions">
+                <button class="btn-primary" onclick="openPremiumEditor()">Začať vytvárať QR kódy</button>
+                <button class="btn-secondary" onclick="closeSuccessModal()">Zavrieť</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <div class="container">
             <p>&copy; 2024 Beautiful QR Codes. Vytvorené s ❤️ na Slovensku.</p>
             <div class="footer-links">
-                <a href="#privacy">Ochrana údajov</a>
-                <a href="#terms">Podmienky</a>
-                <a href="#contact">Kontakt</a>
+                <a href="javascript:void(0)" onclick="showPrivacy()">Ochrana údajov</a>
+                <a href="javascript:void(0)" onclick="showTerms()">Podmienky</a>
+                <a href="javascript:void(0)" onclick="showContact()">Kontakt</a>
             </div>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="js/qrious.min.js"></script>
     <script src="js/qr-generator.js"></script>
-    <script src="js/payment.js"></script>
 </body>
 
 </html>
