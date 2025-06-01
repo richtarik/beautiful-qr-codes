@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: beautiful-qr-codes-sk
+    env: node
+    repo: https://github.com/richtarik/beautiful-qr-codes.git
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BASE_URL
+        value: https://beautiful-qr-codes-sk.onrender.com
+      - key: TRUSTPAY_MERCHANT_ID
+        value: "9998"  # Testing merchant ID - nahraď skutočným
+      - key: TRUSTPAY_SECRET_KEY
+        value: "test_secret"  # Testing secret - nahraď skutočným
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_USER
+        value: "your-email@gmail.com"  # Nahraď svojím
+      - key: SMTP_PASS
+        value: "your-app-password"  # Nahraď svojím
+    healthCheckPath: /api/health 
