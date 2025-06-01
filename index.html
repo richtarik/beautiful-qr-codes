@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="sk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beautiful QR Codes - Vytvor krásne QR kódy zadarmo a premium</title>
+    <meta name="description"
+        content="Vytvárať krásne QR kódy nikdy nebolo jednoduchšie. Základné QR kódy zadarmo, prémiové dizajny za 1€.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🎨 Beautiful QR</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Funkcie</a>
+                <a href="#pricing">Ceny</a>
+                <a href="#generator" class="btn-primary">Vytvoriť QR</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1 class="hero-title">Vytváraj <span class="gradient-text">krásne QR kódy</span> za sekundy</h1>
+                <p class="hero-subtitle">Základné QR kódy zadarmo. Prémiové dizajny za 1€. Bez registrácie, bez
+                    mesačných poplatkov.</p>
+                <div class="hero-cta">
+                    <button class="btn-primary btn-large" onclick="scrollToGenerator()">Začať zadarmo</button>
+                    <button class="btn-secondary btn-large" onclick="showExamples()">Pozrieť ukážky</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- QR Generator Section -->
+        <section id="generator" class="generator-section">
+            <div class="container">
+                <h2>QR Code Generátor</h2>
+                <div class="generator-grid">
+                    <div class="generator-panel">
+                        <div class="input-group">
+                            <label for="qr-type">Typ QR kódu</label>
+                            <select id="qr-type" onchange="updateInputFields()">
+                                <option value="text">Text</option>
+                                <option value="url">URL/Webstránka</option>
+                                <option value="wifi">WiFi</option>
+                                <option value="email">Email</option>
+                                <option value="phone">Telefón</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" id="text-input">
+                            <label for="qr-content">Obsah</label>
+                            <textarea id="qr-content" placeholder="Zadaj text alebo URL..." rows="3"></textarea>
+                        </div>
+
+                        <div class="input-group" id="url-input" style="display: none;">
+                            <label for="url-content">URL adresa</label>
+                            <input type="url" id="url-content" placeholder="https://example.com">
+                        </div>
+
+                        <div class="wifi-inputs" id="wifi-input" style="display: none;">
+                            <div class="input-group">
+                                <label for="wifi-ssid">Názov WiFi (SSID)</label>
+                                <input type="text" id="wifi-ssid" placeholder="MojaWiFi">
+                            </div>
+                            <div class="input-group">
+                                <label for="wifi-password">Heslo</label>
+                                <input type="password" id="wifi-password" placeholder="heslo123">
+                            </div>
+                            <div class="input-group">
+                                <label for="wifi-security">Typ zabezpečenia</label>
+                                <select id="wifi-security">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">Bez hesla</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary btn-large" onclick="generateBasicQR()">Vytvoriť QR kód</button>
+
+                        <div class="premium-section">
+                            <h3>🎨 Chceš krásny dizajn?</h3>
+                            <p>Prémiové QR kódy s vlastnými farbami, logami a štýlmi</p>
+                            <button class="btn-premium" onclick="showPremiumOptions()">Prejsť na Premium (1€)</button>
+                        </div>
+                    </div>
+
+                    <div class="preview-panel">
+                        <div class="qr-preview">
+                            <div id="qr-code-display">
+                                <div class="placeholder">
+                                    <span>📱</span>
+                                    <p>Tvoj QR kód sa zobrazí tu</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="download-section" id="download-section" style="display: none;">
+                            <button class="btn-secondary" onclick="downloadQR()">📥 Stiahnuť PNG</button>
+                            <button class="btn-secondary" onclick="downloadQRSVG()">📄 Stiahnuť SVG</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <div class="container">
+                <h2>Prečo Beautiful QR?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Okamžite</h3>
+                        <p>Vytvor QR kód za pár sekúnd. Žiadna registrácia potrebná.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3>Krásne dizajny</h3>
+                        <p>Prémiové šablóny, vlastné farby a logá pre tvoju značku.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>Jednorazový poplatok</h3>
+                        <p>Žiadne mesačné poplatky. Zaplať len za to čo potrebuješ.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Optimalizované</h3>
+                        <p>Perfektné pre sociálne siete, vizitky a marketing.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="pricing-section">
+            <div class="container">
+                <h2>Jednoduché ceny</h2>
+                <div class="pricing-grid">
+                    <div class="pricing-card basic">
+                        <h3>Základný</h3>
+                        <div class="price">Zadarmo</div>
+                        <ul>
+                            <li>✅ Neobmedzené základné QR kódy</li>
+                            <li>✅ Text, URL, WiFi, Email</li>
+                            <li>✅ PNG download</li>
+                            <li>❌ Vlastné farby</li>
+                            <li>❌ Logá</li>
+                        </ul>
+                        <button class="btn-secondary">Začať zadarmo</button>
+                    </div>
+                    <div class="pricing-card premium">
+                        <div class="popular-badge">Najobľúbenejšie</div>
+                        <h3>Premium QR</h3>
+                        <div class="price">1€ <span>/kus</span></div>
+                        <ul>
+                            <li>✅ Všetko zo základného</li>
+                            <li>✅ Vlastné farby a štýly</li>
+                            <li>✅ Logo v strede</li>
+                            <li>✅ Vysoké rozlíšenie</li>
+                            <li>✅ SVG download</li>
+                        </ul>
+                        <button class="btn-premium">Vytvoriť Premium QR</button>
+                    </div>
+                    <div class="pricing-card bundle">
+                        <h3>Balík 5 QR</h3>
+                        <div class="price">4€ <span class="old-price">5€</span></div>
+                        <ul>
+                            <li>✅ 5 Premium QR kódov</li>
+                            <li>✅ Všetky Premium funkcie</li>
+                            <li>✅ Ušetríš 20%</li>
+                            <li>✅ Rozšírená podpora</li>
+                            <li>✅ Prioritný prístup</li>
+                        </ul>
+                        <button class="btn-premium">Kúpiť balík</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Beautiful QR Codes. Vytvorené s ❤️ na Slovensku.</p>
+            <div class="footer-links">
+                <a href="#privacy">Ochrana údajov</a>
+                <a href="#terms">Podmienky</a>
+                <a href="#contact">Kontakt</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="js/qr-generator.js"></script>
+    <script src="js/payment.js"></script>
+</body>
+
+</html>
