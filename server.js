@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // For TrustPay notifications
 app.use(express.static('.'));
 
 // TrustPay configuration
@@ -122,13 +123,113 @@ app.post('/api/create-order', async (req, res) => {
     }
 });
 
-// TrustPay success callback
-app.get('/success', (req, res) => {
+// TrustPay Notification URL - Server-to-server callback for payment processing
+app.post('/api/trustpay-notification', async (req, res) => {
+    try {
+        console.log('TrustPay Notification received:', req.body);
+
+        const {
+            ResultCode,
+            Reference,
+            Amount,
+            Currency,
+            Email,
+            PaymentMethod,
+            MerchantId,
+            Sig
+        } = req.body;
+
+        // Verify signature for security
+        const sigData = `${MerchantId}/${Amount}/${Currency}/${Reference}/${ResultCode}`;
+        const expectedSig = crypto
+            .createHmac('sha256', TRUSTPAY_CONFIG.secretKey)
+            .update(sigData)
+            .digest('hex')
+            .toUpperCase();
+
+        if (Sig !== expectedSig) {
+            console.error('Invalid signature in notification');
+            return res.status(400).send('Invalid signature');
+        }
+
+        // Process payment based on ResultCode
+        if (ResultCode === '1001') {
+            // Successful payment - activate session
+            const db = await readDatabase();
+            const order = db.orders[Reference];
+
+            if (order && order.status === 'pending') {
+                // Mark order as completed
+                order.status = 'completed';
+                order.paid = true;
+                order.completedAt = new Date().toISOString();
+
+                // Create active session
+                const sessionData = {
+                    sessionToken: order.sessionToken,
+                    email: order.email,
+                    credits: order.credits,
+                    orderId: order.orderId,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+                    lastUsed: new Date().toISOString()
+                };
+
+                db.sessions[order.sessionToken] = sessionData;
+                await writeDatabase(db);
+
+                // Send access email
+                await sendAccessEmail(order.email, order.sessionToken, order.credits);
+
+                console.log(`Payment completed for order: ${Reference}`);
+            }
+        } else {
+            // Failed payment - mark order as failed
+            const db = await readDatabase();
+            const order = db.orders[Reference];
+
+            if (order) {
+                order.status = 'failed';
+                order.failedAt = new Date().toISOString();
+                await writeDatabase(db);
+                console.log(`Payment failed for order: ${Reference}, ResultCode: ${ResultCode}`);
+            }
+        }
+
+        // Respond OK to TrustPay
+        res.status(200).send('OK');
+
+    } catch (error) {
+        console.error('Error processing TrustPay notification:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// TrustPay success callback - User redirect
+app.get('/success', async (req, res) => {
+    const sessionId = req.query.session;
+
+    if (sessionId) {
+        // Check if session was activated by notification
+        const db = await readDatabase();
+        const session = db.sessions[sessionId];
+
+        if (session) {
+            // Session is active, show success page with session info
+            const successHtml = await fs.readFile(path.join(__dirname, 'success.html'), 'utf8');
+            const modifiedHtml = successHtml.replace('{{SESSION_ID}}', sessionId);
+            res.send(modifiedHtml);
+            return;
+        }
+    }
+
+    // Default success page
     res.sendFile(path.join(__dirname, 'success.html'));
 });
 
 // TrustPay error callback
 app.get('/error', (req, res) => {
+    console.log('Error callback parameters:', req.query);
     res.sendFile(path.join(__dirname, 'error.html'));
 });
 

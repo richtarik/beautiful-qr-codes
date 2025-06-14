@@ -286,6 +286,7 @@ async function buildTrustPayUrl(orderId, email, amount) {
         const successUrl = `${window.location.origin}/success?session=${orderId}`;
         const errorUrl = `${window.location.origin}/error`;
         const cancelUrl = `${window.location.origin}/cancel`;
+        const notificationUrl = `${window.location.origin}/api/trustpay-notification`;
 
         const params = new URLSearchParams({
             AccountId: accountId,
@@ -297,7 +298,8 @@ async function buildTrustPayUrl(orderId, email, amount) {
             Sig: signatureData.signature,
             SuccessUrl: successUrl,
             ErrorUrl: errorUrl,
-            CancelUrl: cancelUrl
+            CancelUrl: cancelUrl,
+            NotificationUrl: notificationUrl
         });
 
         return `${baseUrl}?${params.toString()}`;
