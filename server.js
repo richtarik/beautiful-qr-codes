@@ -22,9 +22,9 @@ app.use(express.static('.'));
 
 // TrustPay configuration
 const TRUSTPAY_CONFIG = {
-    clientId: process.env.TRUSTPAY_CLIENT_ID || process.env.TRUSTPAY_MERCHANT_ID || 'YOUR_TRUSTPAY_CLIENT_ID',
-    clientSecret: process.env.TRUSTPAY_CLIENT_SECRET || 'YOUR_TRUSTPAY_CLIENT_SECRET',
-    signatureKey: process.env.TRUSTPAY_SECRET_KEY || 'YOUR_TRUSTPAY_SECRET_KEY',
+    clientId: process.env.TRUSTPAY_CLIENT_ID || process.env.TRUSTPAY_MERCHANT_ID || '4107581879',
+    clientSecret: process.env.TRUSTPAY_CLIENT_SECRET || 'rYO86ii9fsD6zE58dRNIi7rcro30Ebmh',
+    signatureKey: process.env.TRUSTPAY_SECRET_KEY || 'rYO86ii9fsD6zE58dRNIi7rcro30Ebmh',
     apiBaseUrl: 'https://sandbox.trustpay.eu/api'
 };
 
@@ -130,14 +130,87 @@ app.post('/api/create-order', async (req, res) => {
     }
 });
 
-// TrustPay Callback URL - Server-to-server callback for payment processing (REST API)
+// TrustPay Notification URL - MAPI5 format (keeping old endpoint for compatibility)
+app.post('/api/trustpay-notification', async (req, res) => {
+    try {
+        console.log('TrustPay MAPI5 notification received:', req.body);
+
+        const { ResultCode, Reference, Amount, Currency, Email, PaymentMethod, MerchantId, Sig } = req.body;
+
+        // Verify signature for security
+        const sigData = `${MerchantId}/${Amount}/${Currency}/${Reference}/${ResultCode}`;
+        const expectedSig = crypto
+            .createHmac('sha256', TRUSTPAY_CONFIG.signatureKey)
+            .update(sigData)
+            .digest('hex')
+            .toUpperCase();
+
+        if (Sig !== expectedSig) {
+            console.error('Invalid signature in MAPI5 notification');
+            return res.status(400).send('Invalid signature');
+        }
+
+        // Process payment based on ResultCode
+        if (ResultCode === '1001') {
+            // Successful payment - activate session
+            const db = await readDatabase();
+            const order = db.orders[Reference];
+
+            if (order && order.status === 'pending') {
+                // Mark order as completed
+                order.status = 'completed';
+                order.paid = true;
+                order.completedAt = new Date().toISOString();
+
+                // Create active session
+                const sessionData = {
+                    sessionToken: order.sessionToken,
+                    email: order.email,
+                    credits: order.credits,
+                    orderId: order.orderId,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+                    lastUsed: new Date().toISOString()
+                };
+
+                db.sessions[order.sessionToken] = sessionData;
+                await writeDatabase(db);
+
+                // Send access email
+                await sendAccessEmail(order.email, order.sessionToken, order.credits);
+
+                console.log(`MAPI5 Payment completed for order: ${Reference}`);
+            }
+        } else {
+            // Failed payment - mark order as failed
+            const db = await readDatabase();
+            const order = db.orders[Reference];
+
+            if (order) {
+                order.status = 'failed';
+                order.failedAt = new Date().toISOString();
+                await writeDatabase(db);
+                console.log(`MAPI5 Payment failed for order: ${Reference}, ResultCode: ${ResultCode}`);
+            }
+        }
+
+        // Respond OK to TrustPay
+        res.status(200).send('OK');
+
+    } catch (error) {
+        console.error('Error processing TrustPay MAPI5 notification:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// TrustPay Callback URL - Server-to-server callback for payment processing (REST API format)
 app.post('/api/trustpay-callback', async (req, res) => {
     try {
-        console.log('TrustPay callback received:', req.body);
+        console.log('TrustPay REST callback received:', req.body);
 
         const { status, reference, amount, currency, paymentMethod } = req.body;
 
-        // Process payment based on status
+        // Process payment based on status (REST API format)
         if (status === 'PAID' || status === 'SUCCESS') {
             // Successful payment - activate session
             const db = await readDatabase();
@@ -312,7 +385,7 @@ app.get('/api/trustpay-config', (req, res) => {
     });
 });
 
-// Create TrustPay payment using modern REST API
+// Create TrustPay payment - TEMPORARY: Using MAPI5 with fixes until REST API credentials are set
 app.post('/api/create-trustpay-payment', async (req, res) => {
     try {
         const { orderId, email, amount, credits } = req.body;
@@ -321,66 +394,100 @@ app.post('/api/create-trustpay-payment', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Missing required fields' });
         }
 
-        // Prepare payment payload for TrustPay REST API
-        const payload = {
-            amount: Math.round(amount * 100), // Convert EUR to cents
-            currency: "EUR",
-            reference: orderId,
-            merchant: {
-                name: "Beautiful QR Codes",
-                url: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}`
-            },
-            customer: {
-                firstName: "Customer",
-                lastName: "User",
-                email: email
-            },
-            callbackUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/api/trustpay-callback`,
-            returnUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/success?session=${orderId}`
-        };
+        // Check if REST API credentials are available
+        const hasRestApiCredentials = TRUSTPAY_CONFIG.clientId !== 'YOUR_TRUSTPAY_CLIENT_ID' &&
+            TRUSTPAY_CONFIG.clientSecret !== 'YOUR_TRUSTPAY_CLIENT_SECRET';
 
-        const jsonPayload = JSON.stringify(payload);
-        console.log('TrustPay payload:', jsonPayload);
+        if (hasRestApiCredentials) {
+            // Use modern REST API
+            const payload = {
+                amount: Math.round(amount * 100), // Convert EUR to cents
+                currency: "EUR",
+                reference: orderId,
+                merchant: {
+                    name: "Beautiful QR Codes",
+                    url: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}`
+                },
+                customer: {
+                    firstName: "Customer",
+                    lastName: "User",
+                    email: email
+                },
+                callbackUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/api/trustpay-callback`,
+                returnUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/success?session=${orderId}`
+            };
 
-        // Generate HMAC-SHA256 signature
-        const signature = crypto
-            .createHmac('sha256', TRUSTPAY_CONFIG.signatureKey)
-            .update(jsonPayload)
-            .digest('base64');
+            const jsonPayload = JSON.stringify(payload);
+            console.log('TrustPay REST API payload:', jsonPayload);
 
-        // Prepare request headers
-        const headers = {
-            'Content-Type': 'application/json',
-            'Client-Id': TRUSTPAY_CONFIG.clientId,
-            'Signature': signature
-        };
+            const signature = crypto
+                .createHmac('sha256', TRUSTPAY_CONFIG.signatureKey)
+                .update(jsonPayload)
+                .digest('base64');
 
-        console.log('TrustPay headers:', headers);
+            const headers = {
+                'Content-Type': 'application/json',
+                'Client-Id': TRUSTPAY_CONFIG.clientId,
+                'Signature': signature
+            };
 
-        // Make request to TrustPay API
-        const response = await fetch(`${TRUSTPAY_CONFIG.apiBaseUrl}/payments`, {
-            method: 'POST',
-            headers: headers,
-            body: jsonPayload
-        });
-
-        const responseText = await response.text();
-        console.log('TrustPay response status:', response.status);
-        console.log('TrustPay response:', responseText);
-
-        if (response.status === 201) {
-            const data = JSON.parse(responseText);
-            res.json({
-                success: true,
-                redirectUrl: data.redirectUrl
+            const response = await fetch(`${TRUSTPAY_CONFIG.apiBaseUrl}/payments`, {
+                method: 'POST',
+                headers: headers,
+                body: jsonPayload
             });
+
+            const responseText = await response.text();
+            console.log('TrustPay REST API response:', response.status, responseText);
+
+            if (response.status === 201) {
+                const data = JSON.parse(responseText);
+                res.json({ success: true, redirectUrl: data.redirectUrl });
+            } else {
+                throw new Error(`REST API error: ${response.status} - ${responseText}`);
+            }
         } else {
-            console.error('TrustPay error:', response.status, responseText);
-            res.status(400).json({
-                success: false,
-                error: `TrustPay error: ${response.status}`,
-                details: responseText
+            // Fallback to MAPI5 with fixes
+            console.log('Using MAPI5 fallback (REST API credentials not set)');
+
+            const accountId = TRUSTPAY_CONFIG.clientId; // This will be TRUSTPAY_MERCHANT_ID fallback
+            const currency = 'EUR';
+            const paymentType = '0';
+            const amountInCents = Math.round(amount * 100); // FIX: Convert to cents
+
+            // Create signature for MAPI5 (fixed format)
+            const sigData = `${accountId}/${amountInCents}/${currency}/${orderId}/${paymentType}`;
+            const signature = crypto
+                .createHmac('sha256', TRUSTPAY_CONFIG.signatureKey)
+                .update(sigData)
+                .digest('hex')
+                .toUpperCase();
+
+            // Build MAPI5 URL with fixed amount format
+            const baseUrl = 'https://amapi.trustpay.eu/mapi5/Card/paypopup';
+            const successUrl = `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/success?session=${orderId}`;
+            const errorUrl = `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/error`;
+            const cancelUrl = `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/cancel`;
+            const notificationUrl = `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/api/trustpay-notification`;
+
+            const params = new URLSearchParams({
+                AccountId: accountId,
+                Amount: amountInCents.toString(), // FIX: Send cents as string
+                Currency: currency,
+                Reference: orderId,
+                PaymentType: paymentType,
+                Email: email,
+                Sig: signature,
+                SuccessUrl: successUrl,
+                ErrorUrl: errorUrl,
+                CancelUrl: cancelUrl,
+                NotificationUrl: notificationUrl
             });
+
+            const redirectUrl = `${baseUrl}?${params.toString()}`;
+            console.log('MAPI5 redirect URL:', redirectUrl);
+
+            res.json({ success: true, redirectUrl: redirectUrl });
         }
 
     } catch (error) {
@@ -479,8 +586,15 @@ async function startServer() {
 
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
-        console.log(`TrustPay Merchant ID: ${TRUSTPAY_CONFIG.merchantId}`);
+        console.log(`TrustPay Client ID: ${TRUSTPAY_CONFIG.clientId}`);
+        console.log(`TrustPay API URL: ${TRUSTPAY_CONFIG.apiBaseUrl}`);
         console.log('Database initialized successfully');
+
+        // Debug TrustPay config
+        console.log('TrustPay Config Check:');
+        console.log('- CLIENT_ID:', TRUSTPAY_CONFIG.clientId !== 'YOUR_TRUSTPAY_CLIENT_ID' ? '✓ Set' : '✗ Default');
+        console.log('- CLIENT_SECRET:', TRUSTPAY_CONFIG.clientSecret !== 'YOUR_TRUSTPAY_CLIENT_SECRET' ? '✓ Set' : '✗ Default');
+        console.log('- SIGNATURE_KEY:', TRUSTPAY_CONFIG.signatureKey !== 'YOUR_TRUSTPAY_SECRET_KEY' ? '✓ Set' : '✗ Default');
     });
 }
 
