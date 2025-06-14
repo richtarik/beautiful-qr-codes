@@ -269,7 +269,7 @@ async function buildTrustPayUrl(orderId, email, amount) {
             },
             body: JSON.stringify({
                 accountId: accountId,
-                amount: Math.round(amount * 100), // Convert EUR to cents for card payments
+                amount: amount.toFixed(2), // Send EUR amount as decimal string
                 currency: currency,
                 reference: orderId,
                 paymentType: paymentType
@@ -289,7 +289,7 @@ async function buildTrustPayUrl(orderId, email, amount) {
 
         const params = new URLSearchParams({
             AccountId: accountId,
-            Amount: Math.round(amount * 100), // Amount in cents for card payments
+            Amount: amount.toFixed(2), // Send EUR amount as decimal string
             Currency: currency,
             Reference: orderId,
             PaymentType: paymentType,

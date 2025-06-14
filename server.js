@@ -17,7 +17,7 @@ app.use(express.static('.'));
 const TRUSTPAY_CONFIG = {
     merchantId: process.env.TRUSTPAY_MERCHANT_ID || 'YOUR_TRUSTPAY_MERCHANT_ID',
     secretKey: process.env.TRUSTPAY_SECRET_KEY || 'YOUR_TRUSTPAY_SECRET_KEY',
-    baseUrl: 'https://ib.trustpay.eu/mapi5'
+    baseUrl: 'https://amapi.trustpay.eu/mapi5'
 };
 
 // Email configuration
