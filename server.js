@@ -5,6 +5,12 @@ const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
+// Add fetch for older Node.js versions if needed
+if (!globalThis.fetch) {
+    const fetch = require('node-fetch');
+    globalThis.fetch = fetch;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,9 +22,10 @@ app.use(express.static('.'));
 
 // TrustPay configuration
 const TRUSTPAY_CONFIG = {
-    merchantId: process.env.TRUSTPAY_MERCHANT_ID || 'YOUR_TRUSTPAY_MERCHANT_ID',
-    secretKey: process.env.TRUSTPAY_SECRET_KEY || 'YOUR_TRUSTPAY_SECRET_KEY',
-    baseUrl: 'https://amapi.trustpay.eu/mapi5'
+    clientId: process.env.TRUSTPAY_CLIENT_ID || process.env.TRUSTPAY_MERCHANT_ID || 'YOUR_TRUSTPAY_CLIENT_ID',
+    clientSecret: process.env.TRUSTPAY_CLIENT_SECRET || 'YOUR_TRUSTPAY_CLIENT_SECRET',
+    signatureKey: process.env.TRUSTPAY_SECRET_KEY || 'YOUR_TRUSTPAY_SECRET_KEY',
+    apiBaseUrl: 'https://sandbox.trustpay.eu/api'
 };
 
 // Email configuration
@@ -123,40 +130,18 @@ app.post('/api/create-order', async (req, res) => {
     }
 });
 
-// TrustPay Notification URL - Server-to-server callback for payment processing
-app.post('/api/trustpay-notification', async (req, res) => {
+// TrustPay Callback URL - Server-to-server callback for payment processing (REST API)
+app.post('/api/trustpay-callback', async (req, res) => {
     try {
-        console.log('TrustPay Notification received:', req.body);
+        console.log('TrustPay callback received:', req.body);
 
-        const {
-            ResultCode,
-            Reference,
-            Amount,
-            Currency,
-            Email,
-            PaymentMethod,
-            MerchantId,
-            Sig
-        } = req.body;
+        const { status, reference, amount, currency, paymentMethod } = req.body;
 
-        // Verify signature for security
-        const sigData = `${MerchantId}/${Amount}/${Currency}/${Reference}/${ResultCode}`;
-        const expectedSig = crypto
-            .createHmac('sha256', TRUSTPAY_CONFIG.secretKey)
-            .update(sigData)
-            .digest('hex')
-            .toUpperCase();
-
-        if (Sig !== expectedSig) {
-            console.error('Invalid signature in notification');
-            return res.status(400).send('Invalid signature');
-        }
-
-        // Process payment based on ResultCode
-        if (ResultCode === '1001') {
+        // Process payment based on status
+        if (status === 'PAID' || status === 'SUCCESS') {
             // Successful payment - activate session
             const db = await readDatabase();
-            const order = db.orders[Reference];
+            const order = db.orders[reference];
 
             if (order && order.status === 'pending') {
                 // Mark order as completed
@@ -181,18 +166,18 @@ app.post('/api/trustpay-notification', async (req, res) => {
                 // Send access email
                 await sendAccessEmail(order.email, order.sessionToken, order.credits);
 
-                console.log(`Payment completed for order: ${Reference}`);
+                console.log(`Payment completed for order: ${reference}`);
             }
         } else {
             // Failed payment - mark order as failed
             const db = await readDatabase();
-            const order = db.orders[Reference];
+            const order = db.orders[reference];
 
             if (order) {
                 order.status = 'failed';
                 order.failedAt = new Date().toISOString();
                 await writeDatabase(db);
-                console.log(`Payment failed for order: ${Reference}, ResultCode: ${ResultCode}`);
+                console.log(`Payment failed for order: ${reference}, status: ${status}`);
             }
         }
 
@@ -200,7 +185,7 @@ app.post('/api/trustpay-notification', async (req, res) => {
         res.status(200).send('OK');
 
     } catch (error) {
-        console.error('Error processing TrustPay notification:', error);
+        console.error('Error processing TrustPay callback:', error);
         res.status(500).send('Internal Server Error');
     }
 });
@@ -322,38 +307,85 @@ app.get('/api/session/:sessionId', async (req, res) => {
 app.get('/api/trustpay-config', (req, res) => {
     res.json({
         success: true,
-        merchantId: TRUSTPAY_CONFIG.merchantId
+        clientId: TRUSTPAY_CONFIG.clientId,
+        apiBaseUrl: TRUSTPAY_CONFIG.apiBaseUrl
     });
 });
 
-// Generate TrustPay signature for payment
-app.post('/api/trustpay-signature', (req, res) => {
+// Create TrustPay payment using modern REST API
+app.post('/api/create-trustpay-payment', async (req, res) => {
     try {
-        const { accountId, amount, currency, reference, paymentType } = req.body;
+        const { orderId, email, amount, credits } = req.body;
 
-        if (!accountId || !amount || !currency || !reference || paymentType === undefined) {
+        if (!orderId || !email || !amount || !credits) {
             return res.status(400).json({ success: false, error: 'Missing required fields' });
         }
 
-        // Create signature data string according to TrustPay documentation
-        const sigData = `${accountId}/${amount}/${currency}/${reference}/${paymentType}`;
+        // Prepare payment payload for TrustPay REST API
+        const payload = {
+            amount: Math.round(amount * 100), // Convert EUR to cents
+            currency: "EUR",
+            reference: orderId,
+            merchant: {
+                name: "Beautiful QR Codes",
+                url: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}`
+            },
+            customer: {
+                firstName: "Customer",
+                lastName: "User",
+                email: email
+            },
+            callbackUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/api/trustpay-callback`,
+            returnUrl: `${process.env.BASE_URL || 'https://beautiful-qr-codes.onrender.com'}/success?session=${orderId}`
+        };
+
+        const jsonPayload = JSON.stringify(payload);
+        console.log('TrustPay payload:', jsonPayload);
 
         // Generate HMAC-SHA256 signature
         const signature = crypto
-            .createHmac('sha256', TRUSTPAY_CONFIG.secretKey)
-            .update(sigData)
-            .digest('hex')
-            .toUpperCase();
+            .createHmac('sha256', TRUSTPAY_CONFIG.signatureKey)
+            .update(jsonPayload)
+            .digest('base64');
 
-        res.json({
-            success: true,
-            signature: signature,
-            sigData: sigData // For debugging
+        // Prepare request headers
+        const headers = {
+            'Content-Type': 'application/json',
+            'Client-Id': TRUSTPAY_CONFIG.clientId,
+            'Signature': signature
+        };
+
+        console.log('TrustPay headers:', headers);
+
+        // Make request to TrustPay API
+        const response = await fetch(`${TRUSTPAY_CONFIG.apiBaseUrl}/payments`, {
+            method: 'POST',
+            headers: headers,
+            body: jsonPayload
         });
 
+        const responseText = await response.text();
+        console.log('TrustPay response status:', response.status);
+        console.log('TrustPay response:', responseText);
+
+        if (response.status === 201) {
+            const data = JSON.parse(responseText);
+            res.json({
+                success: true,
+                redirectUrl: data.redirectUrl
+            });
+        } else {
+            console.error('TrustPay error:', response.status, responseText);
+            res.status(400).json({
+                success: false,
+                error: `TrustPay error: ${response.status}`,
+                details: responseText
+            });
+        }
+
     } catch (error) {
-        console.error('Error generating TrustPay signature:', error);
-        res.status(500).json({ success: false, error: 'Internal server error' });
+        console.error('Error creating TrustPay payment:', error);
+        res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
     }
 });
 

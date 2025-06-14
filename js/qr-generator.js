@@ -231,9 +231,28 @@ async function processPayment() {
         const result = await response.json();
 
         if (result.success) {
-            // Redirect to TrustPay
-            const trustPayUrl = await buildTrustPayUrl(result.orderId, email, currentOrderAmount);
-            window.location.href = trustPayUrl;
+            // Create TrustPay payment using modern REST API
+            const paymentResponse = await fetch('/api/create-trustpay-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: result.orderId,
+                    email: email,
+                    amount: currentOrderAmount,
+                    credits: currentOrderCredits
+                })
+            });
+
+            const paymentResult = await paymentResponse.json();
+
+            if (paymentResult.success) {
+                // Redirect to TrustPay payment page
+                window.location.href = paymentResult.redirectUrl;
+            } else {
+                throw new Error(paymentResult.error || 'Chyba pri vytváraní TrustPay platby');
+            }
         } else {
             throw new Error(result.error || 'Chyba pri vytváraní objednávky');
         }
@@ -247,67 +266,7 @@ async function processPayment() {
     }
 }
 
-async function buildTrustPayUrl(orderId, email, amount) {
-    try {
-        // Get merchant config from backend
-        const configResponse = await fetch('/api/trustpay-config');
-        const config = await configResponse.json();
-
-        if (!config.success) {
-            throw new Error('Nemožno získať TrustPay konfiguráciu');
-        }
-
-        const accountId = config.merchantId;
-        const currency = 'EUR';
-        const paymentType = '0'; // 0 = Purchase
-
-        // Get signature from backend
-        const signatureResponse = await fetch('/api/trustpay-signature', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                accountId: accountId,
-                amount: amount.toFixed(2), // Send EUR amount as decimal string
-                currency: currency,
-                reference: orderId,
-                paymentType: paymentType
-            })
-        });
-
-        const signatureData = await signatureResponse.json();
-        if (!signatureData.success) {
-            throw new Error('Nemožno získať TrustPay signature');
-        }
-
-        // Use the correct TrustPay card payment endpoint
-        const baseUrl = 'https://amapi.trustpay.eu/mapi5/Card/paypopup';
-        const successUrl = `${window.location.origin}/success?session=${orderId}`;
-        const errorUrl = `${window.location.origin}/error`;
-        const cancelUrl = `${window.location.origin}/cancel`;
-        const notificationUrl = `${window.location.origin}/api/trustpay-notification`;
-
-        const params = new URLSearchParams({
-            AccountId: accountId,
-            Amount: amount.toFixed(2), // Send EUR amount as decimal string
-            Currency: currency,
-            Reference: orderId,
-            PaymentType: paymentType,
-            Email: email,
-            Sig: signatureData.signature,
-            SuccessUrl: successUrl,
-            ErrorUrl: errorUrl,
-            CancelUrl: cancelUrl,
-            NotificationUrl: notificationUrl
-        });
-
-        return `${baseUrl}?${params.toString()}`;
-    } catch (error) {
-        console.error('Chyba pri vytváraní TrustPay URL:', error);
-        throw error;
-    }
-}
+// Removed old buildTrustPayUrl function - now using modern REST API
 
 function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
